@@ -1,0 +1,67 @@
+{% include 'header.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    
+    <title>Lista zadań</title>
+    <link rel="stylesheet" href="{% static 'DataTables/datatables.min.css' %}">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Lista zadań</h1>
+        <a href="{% url 'create_task' %}" class="btn btn-primary">Dodaj zadanie</a>
+        <table id="taskTable" class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Nazwa</th>
+                    <th>Opis</th>
+                    <th>Status</th>
+                    <th>Klient</th>
+                    <th>Czas poświęcony</th>
+                    <th>Data utworzenia</th>
+                    <th>Załączniki</th>
+                    <th>Opcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                <tr>
+                    <td><a href="{% url 'filter_orders_by_name' task.name %}">{{ task.name }}</a></td>
+                    <td>{{ task.description }}</td>
+                    <td>{{ task.status }}</td>
+                    <td>{{ task.client_name }}</td>
+                    <td>{{ task.time_spent }}</td>
+                    <td>{{ task.creation_date }}</td>
+                    <td>
+                        {% if task.attachment %}
+                            <img src="{{ task.attachment.url }}" alt="Załącznik" class="img-thumbnail" style="max-width: 100px;">
+                        {% else %}
+                            Brak załącznika
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'edit_task' task.id %}" class="btn btn-primary">Edytuj</a>
+                        <a href="{% url 'delete_task' task.id %}" class="btn btn-danger">Usuń</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+    <script src="{% static 'js/ssb-admin-2.min.js' %}"></script>
+    <script src="{% static 'DataTables/datatables.min.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            $('#taskTable').DataTable();
+        });
+    </script>
+</body>
+</html>

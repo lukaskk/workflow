@@ -1,0 +1,17 @@
+{% include 'header.html' %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wgraj Plik Excel</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Wgraj Plik Excel</h1>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Wgraj</button>
+        </form>
+    </div>
+</body>
+</html>

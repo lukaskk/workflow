@@ -1,0 +1,99 @@
+{% include 'header.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <title>Lista Zleceń</title>
+    <!-- Styl SB Admin 2 -->
+    <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="{% static 'DataTables/datatables.min.css' %}">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+     <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
+     <!-- DataTables CSS -->
+    
+</head>
+<body>
+
+
+    <div class=".container-lg">
+        <h1 class="h3 mb-2 text-gray-800">Lista Zleceń</h1>
+
+        <a href="{% url 'create_order' %}" class="btn btn-primary mb-3">Dodaj Zlecenie</a>
+
+        <div class="card shadow mb-5">
+            <div class="card-body">
+                <table id="orderTable" class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>ID Zlecenia</th>
+                            <th>Nazwa</th>
+                            <th>Miasto</th>
+                            <th>Ulica</th>
+                            <th>Kod Pocztowy</th>
+                            <th>Klient</th>
+                            <th>Data Realizacji</th>
+                            <th>Czas Poświęcony</th>
+                            <th>Przypisany Użytkownik</th>
+                            <th>Status</th>
+                            <th>Zdjęcia</th>
+                            <th>Opcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>{{ order.order_id }}</td>
+                            <td>{{ order.name }}</td>                           
+                            <td>{{ order.city }}</td>
+                            <td>{{ order.street }}</td>
+                            <td>{{ order.postal_code }}</td>
+                            <td>{{ order.client }}</td>
+                            <td>{{ order.execution_date }}</td>
+                            <td>{{ order.time_spent }}</td>
+                            <td>{{ order.assigned_user }}</td>
+                            <td>{{ order.get_status_display }}</td>
+                            <td>
+                           
+                                {% for photo in order.photos.all %}
+                                    <img src="{{ photo.photo.url }}" alt="Zdjęcie" class="img-thumbnail" style="max-width: 100px;">
+                                     <a href="{% url 'download_photo' photo.id %}">Pobierz zdjęcie</a><br>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                <a href="{% url 'edit_order' order.id %}" class="btn btn-info btn-circle btn-sm">
+                                    <i class="fas fa-edit">Edytuj</i>
+                                </a>
+                                <a href="{% url 'delete_order' order.id %}" class="btn btn-danger btn-circle btn-sm" onclick="return confirm('Czy na pewno chcesz usunąć to zlecenie?');">
+                                    <i class="fas fa-trash">Usuń</i>
+                                </a>
+                                 <a href="{% url 'generate_pdf' order.order_id %}" class="btn btn-info">Raport</a>
+                            </td>
+                            
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap i SB Admin 2 JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <!-- Core plugin JavaScript-->
+    <script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+    <!-- Custom scripts for SB Admin 2 -->
+    <script src="{% static 'js/sb-admin-2.min.js' %}"></script>
+    <!-- DataTables JavaScript -->
+    <script src="{% static 'DataTables/datatables.min.js' %}"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('#orderTable').DataTable();
+        });
+    </script>
+</body>
+</html>

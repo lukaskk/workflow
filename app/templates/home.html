@@ -1,0 +1,48 @@
+{% load static %}
+{% include 'header.html' %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strona Główna</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
+</head>
+<body class="bg-gradient-primary">
+
+    <div class="container">
+        <!-- Nagłówek strony -->
+        <div class="text-center mt-5">
+            <h1 class="h4 text-gray-900 mb-4">Witaj w Panelu Administracyjnym!</h1>
+        </div>
+
+        <!-- Przyciski nawigacyjne -->
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-4 text-center mb-3">
+                
+            </div>
+            <div class="col-md-4 text-center mb-3">
+                <a href="{% url 'task_list' %}" class="btn btn-info btn-block">Lista Zadań</a>
+            </div>
+            <div class="col-md-4 text-center">
+                <form action="{% url 'update_database' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary btn-block">Zaktualizuj bazę</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Core plugin JavaScript -->
+    <script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+
+    <!-- Custom scripts for SB Admin 2 -->
+    <script src="{% static 'js/sb-admin-2.min.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{% include 'header.html' %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Usuwanie pracownika</title>
+</head>
+<body>
+    <h1>Czy na pewno chcesz usunąć tego pracownika?</h1>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Tak, usuń pracownika</button>
+    </form>
+</body>
+</html>

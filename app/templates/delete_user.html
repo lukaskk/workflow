@@ -1,0 +1,17 @@
+{% include 'header.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Usuń Użytkownika</title>
+</head>
+<body>
+    <h1>Usuń Użytkownika: {{ user.username }}</h1>
+    <form method="post">
+        {% csrf_token %}
+        <p>Czy na pewno chcesz usunąć tego użytkownika?</p>
+        <button type="submit">Usuń</button>
+        <a href="{% url 'user_list' %}">Anuluj</a>
+    </form>
+</body>
+</html>

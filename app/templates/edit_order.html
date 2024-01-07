@@ -1,0 +1,23 @@
+{% include 'header.html' %}
+
+<div class="container mt-5">
+    <h1>Edytuj Zlecenie</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        {{ photo_form.as_p }}
+        <button type="submit" class="btn btn-primary">Zapisz Zmiany</button>
+    </form>
+
+    <!-- Wyświetl obecne zdjęcia zlecenia -->
+    <div>
+        <h2>Obecne Zdjęcia</h2>
+        {% for photo in order.photos.all %}
+    <div>
+        <img src="{{ photo.photo.url }}" alt="Zdjęcie" style="max-width: 100px;">
+        <!-- Link do usunięcia zdjęcia -->
+        <a href="{% url 'delete_photo' photo.id %}" class="btn btn-danger btn-sm">Usuń</a>
+    </div>
+{% endfor %}
+    </div>
+</div>

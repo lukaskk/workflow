@@ -1,0 +1,15 @@
+{% include 'header.html' %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edycja pracownika</title>
+</head>
+<body>
+    <h1>Edycja pracownika</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Zapisz zmiany</button>
+    </form>
+</body>
+</html>

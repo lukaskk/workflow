@@ -1,0 +1,69 @@
+{% load static %}
+<!-- header.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- SB Admin 2 CSS -->
+    <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'home' %}">Strona Główna</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                 {% if user.is_administrator %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'create_task' %}">Dodaj Zadanie</a>
+                    </li>
+                        {% endif %}
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'task_list' %}">Lista Zadań</a>
+                    </li>
+                     {% if user.is_administrator %}
+                   
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'upload_excel' %}">Wgraj Excel</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'user_list' %}">Użytkownicy</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'add_user' %}">Dodaj Użytkownika</a>
+                    </li>
+                        {% endif %}
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'update_database' %}">Aktualizuj Bazę</a>
+                    </li>
+                    
+                     <li class="nav-item">
+                         <a class="nav-link" href="{% url 'logout' %}">Wyloguj</a>
+                     </li>
+                     <li class="nav-item">
+                         {{ request.user.username }}
+                     </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Bootstrap core JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+

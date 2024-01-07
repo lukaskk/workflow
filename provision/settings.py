@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-gbkj+%4qc_9js_0$3roh-jv!7(9(@hwnyw4dwhtgpk(k7_+35f
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['workflow-jqs1.onrender.com']
 # settings.py
 
 MEDIA_URL = '/media/'

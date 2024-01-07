@@ -23,6 +23,7 @@ from .forms import CustomUserCreationForm
 from django.views.generic import ListView, CreateView, UpdateView
 
 from .forms import CustomUserForm
+@login_required
 
 def add_user(request):
     if request.method == 'POST':
@@ -33,6 +34,7 @@ def add_user(request):
     else:
         form = CustomUserCreationForm()
     return render(request, 'add_user.html', {'form': form})
+@login_required
 
 def edit_user(request, user_id):
     user = get_object_or_404(CustomUser, pk=user_id)
@@ -45,6 +47,7 @@ def edit_user(request, user_id):
         form = CustomUserForm(instance=user)
 
     return render(request, 'edit_user.html', {'form': form})
+@login_required
 
 
 def delete_user(request, user_id):
@@ -58,6 +61,7 @@ def delete_user(request, user_id):
 
 
 # Lista klientów
+@login_required
 
 # views.py
 def filter_orders_by_name(request, name):
@@ -79,6 +83,7 @@ def filter_orders_by_name(request, name):
     return render(request, 'orders_filtered_list.html', context)
 
 
+@login_required
 
 def home(request):
     return render(request, 'home.html')
@@ -153,6 +158,7 @@ def delete_task(request, task_id):
 import datetime
 import random
 
+@login_required
 
 
 def generate_unique_id():
@@ -168,6 +174,7 @@ def generate_unique_id():
 
 
 
+@login_required
 
 def upload_excel(request):
     if request.method == 'POST':
@@ -206,6 +213,7 @@ def upload_excel(request):
 
     return render(request, 'upload_excel.html', {'form': form})
 
+@login_required
 
 
 def order_list(request):
@@ -213,6 +221,7 @@ def order_list(request):
     return render(request, 'order_list.html', {'orders': orders})
 
 from app.forms import OrderForm # Zakładając, że masz formularz OrderForm
+@login_required
 
 def create_order(request):
     if request.method == 'POST':
@@ -223,6 +232,7 @@ def create_order(request):
     else:
         form = OrderForm()
     return render(request, 'create_order.html', {'form': form})
+@login_required
 
 def edit_order(request, pk):
     order = get_object_or_404(Order, pk=pk)
@@ -234,6 +244,7 @@ def edit_order(request, pk):
     else:
         form = OrderForm(instance=order)
     return render(request, 'edit_order.html', {'form': form})
+@login_required
 
 def delete_order(request, pk):
     order = get_object_or_404(Order, pk=pk)
@@ -245,6 +256,7 @@ def delete_order(request, pk):
 
 from .models import  OrderPhoto
 from .forms import EditOrderForm, OrderPhotoForm
+@login_required
 
 def edit_order(request, pk):
     order = get_object_or_404(Order, pk=pk)
@@ -275,6 +287,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 # Rejestruj czcionkę
 pdfmetrics.registerFont(TTFont('Lato', 'static/fonts/Afacad-VariableFont_wght.ttf'))
 import io
+@login_required
 
 def generate_pdf(request, order_id):
     order = Order.objects.get(order_id=order_id)
@@ -329,6 +342,7 @@ def generate_pdf(request, order_id):
     buffer.seek(0)
     return HttpResponse(buffer.getvalue(), content_type='application/pdf')
 
+@login_required
 
 def download_photo(request, photo_id):
     photo = OrderPhoto.objects.get(id=photo_id)
@@ -424,6 +438,7 @@ def update_database(request):
     return redirect(reverse('home'))    
 
 
+@login_required
 
 def delete_photo(request, photo_id):
     photo = get_object_or_404(OrderPhoto, pk=photo_id)

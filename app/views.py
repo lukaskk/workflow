@@ -15,7 +15,9 @@ from .models import Order
 from django.shortcuts import render
 from .models import CustomUser
 from .forms import CustomUserCreationForm
-
+from PIL import Image, ImageOps
+from django.http import FileResponse
+import io
 
 # Używaj niestandardowego modelu użytkownika
 
@@ -217,7 +219,12 @@ def upload_excel(request):
 
 
 def order_list(request):
-    orders = Order.objects.all()  # Pobranie wszystkich zleceń
+    orders = Order.objects.all()
+    for order in orders:
+        for photo in order.photos.all():
+            if not photo.photo:
+                # Usuwamy rekord zdjęcia, jeśli plik nie istnieje
+                photo.delete()
     return render(request, 'order_list.html', {'orders': orders})
 
 from app.forms import OrderForm # Zakładając, że masz formularz OrderForm
@@ -240,10 +247,10 @@ def edit_order(request, pk):
         form = OrderForm(request.POST, instance=order)
         if form.is_valid():
             form.save()
-            return redirect('order_list')
+            return redirect('filter_orders_by_name')
     else:
         form = OrderForm(instance=order)
-    return render(request, 'edit_order.html', {'form': form})
+    return render(request, 'filter_orders_by_name', {'form': form})
 @login_required
 
 def delete_order(request, pk):
@@ -346,13 +353,21 @@ def generate_pdf(request, order_id):
 
 def download_photo(request, photo_id):
     photo = OrderPhoto.objects.get(id=photo_id)
-    # Upewnij się, że ścieżka do pliku zdjęcia jest poprawna
     file_path = photo.photo.path
-    return FileResponse(open(file_path, 'rb'))
 
-# views.py
+    with Image.open(file_path) as img:
+        # Określenie maksymalnych wymiarów
+        max_size = (2272, 1704)
 
+        # Użycie metody thumbnail do zmiany rozmiaru obrazu
+        img.thumbnail(max_size, Image.LANCZOS)
 
+        # Zapisywanie przeskalowanego obrazu do strumienia bajtów w pamięci
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format='JPEG')  # Możesz dostosować format w razie potrzeby
+        img_byte_arr.seek(0)
+
+    return FileResponse(img_byte_arr, as_attachment=True, filename=photo.photo.name)
 
 
 
@@ -440,13 +455,20 @@ def update_database(request):
 
 @login_required
 
+
+
 def delete_photo(request, photo_id):
-    photo = get_object_or_404(OrderPhoto, pk=photo_id)
-    order_id = photo.order.id
+    photo = get_object_or_404(OrderPhoto, id=photo_id)
+    order_id = photo.order.id  # Zapamiętaj ID zlecenia, do którego należy zdjęcie
+
+    # Usunięcie pliku zdjęcia z serwera (jeśli to konieczne)
+    photo.photo.delete(save=False)
+
+    # Usunięcie rekordu zdjęcia z bazy danych
     photo.delete()
+
+    # Przekierowanie z powrotem do formularza edycji zlecenia
     return redirect('edit_order', pk=order_id)
-
-
 
 
 

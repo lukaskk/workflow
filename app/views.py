@@ -244,22 +244,39 @@ def create_order(request):
 def edit_order(request, pk):
     order = get_object_or_404(Order, pk=pk)
     if request.method == 'POST':
-        form = OrderForm(request.POST, instance=order)
-        if form.is_valid():
+        form = EditOrderForm(request.POST, instance=order)
+        photo_form = OrderPhotoForm(request.POST, request.FILES)
+        if form.is_valid() and photo_form.is_valid():
             form.save()
-            return redirect('filter_orders_by_name')
+            photo_instance = photo_form.save(commit=False)
+            photo_instance.order = order
+            photo_instance.save()
+            return redirect('filter_orders_by_name', name=order.name)  # Przekierowanie do filtrowanej listy zamówień po nazwie
     else:
-        form = OrderForm(instance=order)
-    return render(request, 'filter_orders_by_name', {'form': form})
-@login_required
+        form = EditOrderForm(instance=order)
+        photo_form = OrderPhotoForm()
 
+    return render(request, 'edit_order.html', {'form': form, 'photo_form': photo_form, 'order': order})
+
+@login_required
 def delete_order(request, pk):
     order = get_object_or_404(Order, pk=pk)
+    order_name = order.name  # Zapamiętaj nazwę zamówienia
     if request.method == 'POST':
         order.delete()
-        return redirect('order_list')
+        return redirect('filter_orders_by_name', name=order_name)  # Przekierowanie do filtrowanej listy zamówień po nazwie
     return render(request, 'delete_order.html', {'order': order})
 
+@login_required
+def delete_photo(request, photo_id):
+    photo = get_object_or_404(OrderPhoto, id=photo_id)
+    order_id = photo.order.id
+    order_name = photo.order.name  # Zapamiętaj nazwę zamówienia
+
+    photo.photo.delete(save=False)  # Usuwanie pliku zdjęcia
+    photo.delete()  # Usuwanie rekordu zdjęcia
+
+    return redirect('filter_orders_by_name', name=order_name)  # Przekierowanie do filtrowanej listy zamówień po nazwie
 
 from .models import  OrderPhoto
 from .forms import EditOrderForm, OrderPhotoForm
@@ -453,22 +470,7 @@ def update_database(request):
     return redirect(reverse('home'))    
 
 
-@login_required
 
-
-
-def delete_photo(request, photo_id):
-    photo = get_object_or_404(OrderPhoto, id=photo_id)
-    order_id = photo.order.id  # Zapamiętaj ID zlecenia, do którego należy zdjęcie
-
-    # Usunięcie pliku zdjęcia z serwera (jeśli to konieczne)
-    photo.photo.delete(save=False)
-
-    # Usunięcie rekordu zdjęcia z bazy danych
-    photo.delete()
-
-    # Przekierowanie z powrotem do formularza edycji zlecenia
-    return redirect('edit_order', pk=order_id)
 
 
 

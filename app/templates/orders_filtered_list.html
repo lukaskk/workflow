@@ -26,6 +26,10 @@
     <div class="progress">
         <div class="progress-bar" role="progressbar" style="width: {{ progress_percentage }}%" aria-valuenow="{{ progress_percentage }}" aria-valuemin="0" aria-valuemax="100">{{ progress_percentage|floatformat:2 }}%</div>
     </div>
+    <div class="mb-3">
+        <a href="{% url 'download_orders_excel' filter_name %}" class="btn btn-success">Eksportuj tabelę (Excel)</a>
+        <a href="{% url 'download_photos' filter_name %}" class="btn btn-success">Pobierz zdjęcia (ZIP)</a>
+    </div>
 
     <!-- Tabela zleceń... -->
 </div>

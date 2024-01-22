@@ -54,7 +54,9 @@ urlpatterns = [
     path('users/add/', views.add_user, name='add_user'),
     path('users/edit/<int:user_id>/', views.edit_user, name='edit_user'),
     path('users/delete/<int:user_id>/', views.delete_user, name='delete_user'),
-    path('users/', views.user_list, name='user_list'),  
+    path('users/', views.user_list, name='user_list'),
+    path('download-orders-excel/<str:name>/', views.download_orders_excel, name='download_orders_excel'),
+    path('download-photos/<str:name>/', views.download_photos, name='download_photos'),
 ]
 
 if settings.DEBUG:

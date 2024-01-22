@@ -18,9 +18,59 @@ from .forms import CustomUserCreationForm
 from PIL import Image, ImageOps
 from django.http import FileResponse
 import io
-
+from io import BytesIO
+import zipfile
 # Używaj niestandardowego modelu użytkownika
 
+
+def download_photos(request, name):
+    orders = Order.objects.filter(name=name)
+    photos = OrderPhoto.objects.filter(order__in=orders)
+
+    response = HttpResponse(content_type='application/zip')
+    response['Content-Disposition'] = f'attachment; filename="photos_{name}.zip"'
+
+    with zipfile.ZipFile(response, 'w') as zip_file:
+        for photo in photos:
+            file_path = photo.photo.path
+            zip_file.write(file_path, photo.photo.name)
+
+    return response
+
+def download_orders_excel(request, name):
+    orders = Order.objects.filter(name=name)
+
+    # Tworzenie nowego arkusza kalkulacyjnego
+    wb = openpyxl.Workbook()
+    ws = wb.active
+
+    # Dodawanie nagłówków
+    columns = ["ID Zlecenia", "Nazwa", "Miasto", "Ulica", "Kod Pocztowy", "Klient", "Data Realizacji", "Czas Poświęcony", "Przypisany Użytkownik", "Status", "Zdjęcia"]
+    ws.append(columns)
+
+    # Dodawanie danych zleceń
+    for order in orders:
+        # Pobieranie nazw plików zdjęć dla każdego zlecenia
+        photo_filenames = [photo.photo.name for photo in order.photos.all()]
+        photo_list = ', '.join(photo_filenames)  # Tworzenie listy nazw plików jako string
+
+        ws.append([
+            order.order_id, order.name, order.city, order.street,
+            order.postal_code, order.client, order.execution_date,
+            order.time_spent, order.assigned_user.username if order.assigned_user else '',
+            order.get_status_display(), photo_list
+        ])
+
+    # Zapisywanie arkusza do strumienia bajtów
+    response = HttpResponse(content_type='application/vnd.ms-excel')
+    response['Content-Disposition'] = f'attachment; filename="orders_{name}.xlsx"'
+
+    with BytesIO() as file:
+        wb.save(file)
+        file.seek(0)
+        response.write(file.read())
+
+    return response
 
 from django.views.generic import ListView, CreateView, UpdateView
 
@@ -280,24 +330,7 @@ def delete_photo(request, photo_id):
 
 from .models import  OrderPhoto
 from .forms import EditOrderForm, OrderPhotoForm
-@login_required
 
-def edit_order(request, pk):
-    order = get_object_or_404(Order, pk=pk)
-    if request.method == 'POST':
-        form = EditOrderForm(request.POST, instance=order)
-        photo_form = OrderPhotoForm(request.POST, request.FILES)
-        if form.is_valid() and photo_form.is_valid():
-            form.save()
-            photo_instance = photo_form.save(commit=False)
-            photo_instance.order = order
-            photo_instance.save()
-            return redirect('order_list')
-    else:
-        form = EditOrderForm(instance=order)
-        photo_form = OrderPhotoForm()
-
-    return render(request, 'edit_order.html', {'form': form, 'photo_form': photo_form, 'order': order})
 
 
 from django.http import HttpResponse

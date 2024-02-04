@@ -449,11 +449,6 @@ IMAP_PORT = 993
 
 
 
-SMTP_SERVER = "lukaskk.nazwa.pl"
-SMTP_PORT = 456  # Zmiana na port 587
-
-EMAIL_USE_TLS = True
-
 
 
 
@@ -519,7 +514,7 @@ def update_order_with_email(order, email_message):
             photo.photo.save(file_name, ContentFile(resized_image))
             photos_saved.append(file_name)
            
-    send_feedback_email(order.order_id, f"Zlecenie {order.order_id} zostało zaktualizowane. Miasto: {order.city}, Ulica: {order.street}, Zapisane zdjęcia: {', '.join(photos_saved)}", EMAIL_ACCOUNT, EMAIL_PASSWORD, sender_email)
+    #send_feedback_email(order.order_id, f"Zlecenie {order.order_id} zostało zaktualizowane. Miasto: {order.city}, Ulica: {order.street}, Zapisane zdjęcia: {', '.join(photos_saved)}", EMAIL_ACCOUNT, EMAIL_PASSWORD, sender_email)
     return f"Order with ID {order.order_id} has been updated successfully."
 
 def resize_image(file_data, max_width=1024, max_height=1024):
@@ -536,18 +531,7 @@ def resize_image(file_data, max_width=1024, max_height=1024):
         return byte_arr.getvalue()
 
 
-def send_feedback_email(order_id, message, sender_email, EMAIL_ACCOUNT, EMAIL_PASSWORD):
-    
-    print("test 1")
-    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as smtp:
-        smtp.login(EMAIL_ACCOUNT, EMAIL_PASSWORD)
-        msg = EmailMessage()
-        msg['Subject'] = 'Aktualizacja zamówienia' if order_id else 'Informacja o zleceniu'
-        msg['From'] = EMAIL_ACCOUNT
-        msg['To'] = sender_email
-        msg.set_content(message)
-        smtp.send_message(msg)
-        print(sender_email, message, order_id )
+
 
 def update_database(request):
     check_emails()

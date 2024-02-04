@@ -517,7 +517,7 @@ def update_order_with_email(order, email_message):
     #send_feedback_email(order.order_id, f"Zlecenie {order.order_id} zostało zaktualizowane. Miasto: {order.city}, Ulica: {order.street}, Zapisane zdjęcia: {', '.join(photos_saved)}", EMAIL_ACCOUNT, EMAIL_PASSWORD, sender_email)
     return f"Order with ID {order.order_id} has been updated successfully."
 
-def resize_image(file_data, max_width=1024, max_height=1024):
+def resize_image(file_data, max_width=1920, max_height=1080):
     with Image.open(io.BytesIO(file_data)) as img:
         # Usuwanie kanału alfa dla obrazów RGBA i konwersja do RGB
         if img.mode in ("RGBA", "LA"):

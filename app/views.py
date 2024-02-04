@@ -9,17 +9,33 @@ import email
 import openpyxl
 from email import policy
 from django.core.files.base import ContentFile
-
+from email.utils import parseaddr
 from .forms import UploadFileForm
 from .models import Order
-from django.shortcuts import render
+from django.core.mail import send_mail
+from django.conf import settings
+
 from .models import CustomUser
 from .forms import CustomUserCreationForm
 from PIL import Image, ImageOps
-from django.http import FileResponse
+
 import io
 from io import BytesIO
 import zipfile
+
+import datetime
+
+
+
+from django.urls import reverse
+
+
+
+
+import smtplib
+from email.message import EmailMessage
+
+
 # Używaj niestandardowego modelu użytkownika
 
 
@@ -421,12 +437,23 @@ def download_photo(request, photo_id):
 
 
 
+#===================================================
 
-# Dane do logowania do serwera IMAP
+
 IMAP_SERVER = 'lukaskk.nazwa.pl'
+SMTP_SERVER = 'lukaskk.nazwa.pl'
 EMAIL_ACCOUNT = 'raport@jklm.eu'
 EMAIL_PASSWORD = 'rt4523aaQQ@@!!'
-IMAP_PORT = 993 
+IMAP_PORT = 993
+
+
+
+
+SMTP_SERVER = "lukaskk.nazwa.pl"
+SMTP_PORT = 456  # Zmiana na port 587
+
+EMAIL_USE_TLS = True
+
 
 
 
@@ -449,6 +476,7 @@ def check_emails():
        
         if order_id:
             try:
+                print(f"Order with ID {order_id} dodanet.")
                 order = Order.objects.get(order_id=order_id)
                 update_order_with_email(order, email_message)
                 # Oznaczanie wiadomości jako usuniętej
@@ -462,47 +490,71 @@ def check_emails():
     mail.expunge()
     mail.close()
     mail.logout()
+    
+
+
 
 def extract_order_id(subject):
-    if subject and subject.startswith('Order ID: '):
-        return subject.split('Order ID: ')[1].strip()
+    prefix = "Order ID: "
+    if subject.startswith(prefix):
+        return subject[len(prefix):].strip()
     return None
 
 def update_order_with_email(order, email_message):
+    
     order.status = 'Completed'
-    order.execution_date = datetime.datetime.now()  # Ustawienie bieżącej daty jako daty wykonania
+    order.execution_date = datetime.datetime.now()
     order.save()
-
+    sender_email = parseaddr(email_message['From'])[1]  # Pobranie adresu e-mail nadawcy
+    photos_saved = []
     for part in email_message.walk():
-        if part.get_content_maintype() == 'multipart':
+        if part.get_content_maintype() == 'multipart' or part.get('Content-Disposition') is None:
             continue
-        if part.get('Content-Disposition') is None:
-            continue
-
         file_data = part.get_payload(decode=True)
         file_name = part.get_filename()
 
         if file_data and file_name:
+            resized_image = resize_image(file_data)
             photo = OrderPhoto(order=order)
-            photo.photo.save(file_name, ContentFile(file_data), save=True)
+            photo.photo.save(file_name, ContentFile(resized_image))
+            photos_saved.append(file_name)
+           
+    send_feedback_email(order.order_id, f"Zlecenie {order.order_id} zostało zaktualizowane. Miasto: {order.city}, Ulica: {order.street}, Zapisane zdjęcia: {', '.join(photos_saved)}", EMAIL_ACCOUNT, EMAIL_PASSWORD, sender_email)
+    return f"Order with ID {order.order_id} has been updated successfully."
 
-def run():
-    check_emails()
+def resize_image(file_data, max_width=1024, max_height=1024):
+    with Image.open(io.BytesIO(file_data)) as img:
+        # Usuwanie kanału alfa dla obrazów RGBA i konwersja do RGB
+        if img.mode in ("RGBA", "LA"):
+            background = Image.new(img.mode[:-1], img.size, (255, 255, 255))
+            background.paste(img, img.split()[-1])  # Usunięcie kanału alfa
+            img = background.convert("RGB")
+        
+        img.thumbnail((max_width, max_height), Image.LANCZOS)
+        byte_arr = io.BytesIO()
+        img.save(byte_arr, format='JPEG')  # Teraz zapis będzie działał bez błędu
+        return byte_arr.getvalue()
 
-if __name__ == '__main__':
-    run()
 
+def send_feedback_email(order_id, message, sender_email, EMAIL_ACCOUNT, EMAIL_PASSWORD):
     
-    
-from django.urls import reverse
- # Zaimportuj funkcję, którą chcesz wywołać
+    print("test 1")
+    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as smtp:
+        smtp.login(EMAIL_ACCOUNT, EMAIL_PASSWORD)
+        msg = EmailMessage()
+        msg['Subject'] = 'Aktualizacja zamówienia' if order_id else 'Informacja o zleceniu'
+        msg['From'] = EMAIL_ACCOUNT
+        msg['To'] = sender_email
+        msg.set_content(message)
+        smtp.send_message(msg)
+        print(sender_email, message, order_id )
 
 def update_database(request):
     check_emails()
-    # Przekierowanie z powrotem na stronę, z której przycisk został kliknięty
-    return redirect(reverse('home'))    
+    return redirect(reverse('home'))
 
 
+#===================================================================
 
 
 

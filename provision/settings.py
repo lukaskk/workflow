@@ -98,6 +98,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'provision.wsgi.application'
 
+DEFAULT_FROM_EMAIL = 'raport@klm.eu'
+EMAIL_HOST = 'lukaskk.nazwa.pl'
+EMAIL_HOST_USER = 'lukaskk.nazwa.pl'
+EMAIL_HOST_PASSWORD  = 'rt4523aaQQ@@!!'
+IMAP_SERVER = 'lukaskk.nazwa.pl'
+SMTP_SERVER = 'lukaskk.nazwa.pl'
+IMAP_PORT = 993 
+SMPT_PORT = 587 
+
+
+
+
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases

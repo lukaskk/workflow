@@ -11,11 +11,28 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <!-- SB Admin 2 CSS -->
     <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        .navbar-custom {
+            background-color: #28a745; /* Zielony kolor */
+        }
+        .navbar-custom .navbar-brand,
+        .navbar-custom .nav-link {
+            color: white; /* Biały tekst */
+        }
+        .navbar-custom .nav-link:hover {
+            color: #ccc; /* Jasnoszary tekst po najechaniu */
+        }
+        .navbar-custom .user-name {
+            color: white;
+            margin-left: 10px;
+        }
+    </style>
 </head>
 <body>
 
     <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-custom">
         <div class="container-fluid">
             <a class="navbar-brand" href="{% url 'home' %}">Strona Główna</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -23,38 +40,34 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
-                 {% if user.is_administrator %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'create_task' %}">Dodaj Zadanie</a>
-                    </li>
-                        {% endif %}
-
+                    {% if user.is_administrator %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'create_task' %}">Dodaj Zadanie</a>
+                        </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'task_list' %}">Lista Zadań</a>
                     </li>
-                     {% if user.is_administrator %}
-                   
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'upload_excel' %}">Wgraj Excel</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'user_list' %}">Użytkownicy</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'add_user' %}">Dodaj Użytkownika</a>
-                    </li>
-                        {% endif %}
-
+                    {% if user.is_administrator %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'upload_excel' %}">Wgraj Excel</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'user_list' %}">Użytkownicy</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'add_user' %}">Dodaj Użytkownika</a>
+                        </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'update_database' %}">Aktualizuj Bazę</a>
                     </li>
-                    
-                     <li class="nav-item">
-                         <a class="nav-link" href="{% url 'logout' %}">Wyloguj</a>
-                     </li>
-                     <li class="nav-item">
-                         {{ request.user.username }}
-                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout' %}">Wyloguj</a>
+                    </li>
+                    <li class="nav-item user-name">
+                        {{ request.user.username }}
+                    </li>
                 </ul>
             </div>
         </div>
@@ -65,5 +78,3 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-

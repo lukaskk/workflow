@@ -108,12 +108,6 @@ IMAP_PORT = 993
 SMPT_PORT = 587 
 
 
-CELERY_BEAT_SCHEDULE = {
-    'scheduled_check_emails_every_5_minutes': {
-        'task': 'provision.tasks.scheduled_check_emails',
-        'schedule': 300.0,  # czas w sekundach, co ile zadanie ma być wykonywane
-    },
-}
 
 
 

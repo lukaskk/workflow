@@ -76,4 +76,28 @@ class EditOrderForm(forms.ModelForm):
             'execution_date': forms.DateInput(attrs={'type': 'date'}),
         }
 
-    
+class OrderStatusForm(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = ['status']  # Załóżmy, że pole status jest zdefiniowane w modelu Order
+        widgets = {
+            'status': forms.Select(choices=Order.STATUS_CHOICES, attrs={'class': 'form-control'}),
+        }   
+        
+        
+        
+from django import forms
+from .models import Order
+
+from django import forms
+from .models import Order
+
+
+class UpdateOrderForm(forms.Form):
+    # Przykład, jak możesz zdefiniować pole formularza
+    orders = forms.ModelMultipleChoiceField(queryset=Order.objects.none(), widget=forms.CheckboxSelectMultiple(), required=False)
+
+    def __init__(self, *args, **kwargs):
+        orders_qs = kwargs.pop('orders_qs', Order.objects.none())
+        super(UpdateOrderForm, self).__init__(*args, **kwargs)
+        self.fields['orders'].queryset = orders_qs

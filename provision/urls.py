@@ -25,7 +25,7 @@ from app.views import order_list
 from app.views import generate_pdf
 from app.views import update_database
 from app.views import user_list
-
+from app.views import filter_orders_by_pod
 
 
 
@@ -47,6 +47,7 @@ urlpatterns = [
     path('orders/edit/<int:pk>/', views.edit_order, name='edit_order'),
     path('orders/delete/<int:pk>/', views.delete_order, name='delete_order'),
     path('orders/filter/<str:name>/', views.filter_orders_by_name, name='filter_orders_by_name'),
+    path('orders/by-pod/<str:inicjaly>/', filter_orders_by_pod, name='filter_orders_by_pod'),
     path('orders/<str:order_id>/pdf/', generate_pdf, name='generate_pdf'),
     path('download_photo/<int:photo_id>/', views.download_photo, name='download_photo'),
     path('update-database/', update_database, name='update_database'),
@@ -57,6 +58,8 @@ urlpatterns = [
     path('users/', views.user_list, name='user_list'),
     path('download-orders-excel/<str:name>/', views.download_orders_excel, name='download_orders_excel'),
     path('download-photos/<str:name>/', views.download_photos, name='download_photos'),
+    path('update_order_status/<int:order_id>/', views.update_order_status, name='update_order_status'),
+    path('download/<str:name>/', views.download_photos_and_excel, name='download_photos_and_excel'),
 ]
 
 if settings.DEBUG:

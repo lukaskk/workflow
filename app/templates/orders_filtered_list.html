@@ -1,4 +1,3 @@
-
 {% load static %}
 {% include 'header.html' %}
 
@@ -38,8 +37,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <a href="{% url 'download_orders_excel' filter_name %}" class="btn btn-success">Eksportuj tabelę (Excel)</a>
-                        <a href="{% url 'download_photos' filter_name %}" class="btn btn-success">Pobierz zdjęcia (ZIP)</a>
+                      <a href="{% url 'download_photos_and_excel' name='baza' %}" class="btn btn-primary">Pobierz archiwum</a>
                     </div>
 
                     <div class="card shadow mb-5">
@@ -52,9 +50,8 @@
                             <th>Miasto</th>
                             <th>Ulica</th>
                             <th>Kod Pocztowy</th>
-                            <th>Klient</th>
+                            <th>Województwo</th>
                             <th>Data Realizacji</th>
-                            <th>Czas Poświęcony</th>
                             <th>Przypisany Użytkownik</th>
                             <th>Status</th>
                             <th>Zdjęcia</th>
@@ -69,10 +66,9 @@
                             <td>{{ order.city }}</td>
                             <td>{{ order.street }}</td>
                             <td>{{ order.postal_code }}</td>
-                            <td>{{ order.client }}</td>
+                            <td>{{ order.wojewodztwo }}</td>
                             <td>{{ order.execution_date }}</td>
-                            <td>{{ order.time_spent }}</td>
-                            <td>{{ order.assigned_user }}</td>
+                            <td>{{ order.inicjaly }}</td>
                             <td>{{ order.get_status_display }}</td>
                                                  <td>
                           <div id="gallery{{ order.id }}" class="carousel slide" data-ride="carousel">
@@ -144,4 +140,3 @@
     </script>
 </body>
 </html>
-

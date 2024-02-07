@@ -47,7 +47,7 @@ class Attachment(models.Model):
 
     
     
-    
+import uuid 
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -57,15 +57,17 @@ class Order(models.Model):
     STATUS_CHOICES = [
         ('Pending', 'Oczekujące'),
         ('Completed', 'Zrealizowane'),
-        ('Needs Review', 'Do poprawy'),
+        ('Needs Review', 'Niezakceptowany'),
     ]
-
+    
     order_id = models.CharField(max_length=20, unique=True)  # ID zlecenia
     name = models.CharField(max_length=100)  # Nazwa zlecenia
     street = models.CharField(max_length=100)  # Ulica
     city = models.CharField(max_length=50)  # Miasto
     postal_code = models.CharField(max_length=10)  # Kod pocztowy
     client = models.CharField(max_length=100)  # Klient
+    wojewodztwo = models.CharField(max_length=20,null=True, blank=True)  # wojewodztwo
+    inicjaly= models.CharField(max_length=20,null=True, blank=True)# inicjaly
     execution_date = models.DateField(null=True, blank=True) # Data realizacji zlecenia
     time_spent = models.DecimalField(max_digits=5, decimal_places=2)  # Czas poświęcony na zlecenie
     assigned_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # Użytkownik przypisany do zlecenia

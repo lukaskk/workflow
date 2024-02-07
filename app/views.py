@@ -25,18 +25,101 @@ import zipfile
 
 import datetime
 
-
+from  django.shortcuts import render
+from .models import Order
+from .forms import OrderStatusForm
 
 from django.urls import reverse
 
 
+from django.shortcuts import render, redirect
+from .forms import UpdateOrderForm  # Upewnij się, że masz taki formularz
+from .models import Order
 
 
-import smtplib
-from email.message import EmailMessage
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from .models import Order, OrderPhoto
+import zipfile
+import openpyxl
+from io import BytesIO
 
 
-# Używaj niestandardowego modelu użytkownika
+from zipfile import ZipFile
+
+from django.http import HttpResponse
+from io import BytesIO
+import openpyxl
+import zipfile
+from .models import Order
+
+
+
+def filter_orders_by_pod(request, inicjaly):
+    orders = Order.objects.filter(inicjaly=inicjaly)  # Filtruj zlecenia według nazwy
+    total_orders = orders.count()
+    completed_orders = orders.filter(status='Completed').count()
+
+    if total_orders > 0:
+        progress_percentage = (completed_orders / total_orders) * 100
+    else:
+        progress_percentage = 0
+
+    context = {
+        'orders': orders,
+        'filter_name': inicjaly,
+        'progress_percentage': progress_percentage,
+    }
+
+    return render(request, 'pod.html', context)
+
+
+
+
+def download_photos_and_excel(request, name):
+    completed_orders = Order.objects.filter(status='Completed')
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Zrealizowane Zamówienia'
+    columns = ["ID Zlecenia", "Nazwa", "Miasto", "Ulica", "Kod Pocztowy", "Data Realizacji", "Status"]
+    ws.append(columns)
+
+    photos_zip_buffer = BytesIO()
+
+    with zipfile.ZipFile(photos_zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for order in completed_orders:
+            order_execution_date = order.execution_date.strftime('%Y-%m-%d') if order.execution_date else 'Brak daty'
+            ws.append([
+                order.order_id, order.name, order.city, order.street,
+                order.postal_code, order_execution_date, order.get_status_display()
+            ])
+
+            photo_counter = 0
+            for photo in order.photos.all():
+                photo_counter += 1
+                file_path = photo.photo.path
+                # Utworzenie nazwy folderu na podstawie ID zamówienia i miasta
+                folder_name = f"{order.order_id}_{order.city}"
+                new_filename = f"{folder_name}/{folder_name}_{photo_counter}.jpg"
+                # Dodanie pliku do archiwum ZIP z określeniem nowej ścieżki, łącznie z nazwą folderu
+                zip_file.write(file_path, new_filename)
+
+    excel_buffer = BytesIO()
+    wb.save(excel_buffer)
+    excel_buffer.seek(0)
+
+    response = HttpResponse(content_type='application/zip')
+    response['Content-Disposition'] = f'attachment; filename="{name}_completed_data.zip"'
+
+    with zipfile.ZipFile(response, 'w', zipfile.ZIP_DEFLATED) as final_zip:
+        final_zip.writestr(f"{name}_orders.xlsx", excel_buffer.getvalue())
+        photos_zip_buffer.seek(0)
+        # Dodanie zawartości bufora zdjęć jako pojedynczego pliku ZIP w głównym archiwum ZIP
+        final_zip.writestr(f"{name}_photos.zip", photos_zip_buffer.getvalue())
+
+    return response
+
 
 
 def download_photos(request, name):
@@ -132,6 +215,10 @@ def delete_user(request, user_id):
 @login_required
 
 # views.py
+
+
+
+# views.py
 def filter_orders_by_name(request, name):
     orders = Order.objects.filter(name=name)  # Filtruj zlecenia według nazwy
     total_orders = orders.count()
@@ -149,6 +236,7 @@ def filter_orders_by_name(request, name):
     }
 
     return render(request, 'orders_filtered_list.html', context)
+
 
 
 @login_required
@@ -260,8 +348,10 @@ def upload_excel(request):
                 city = row[3].value
                 postal_code = row[4].value
                 client = row[5].value
-                execution_date = row[6].value
-                time_spent = row[7].value
+                wojewodztwo = row[6].value
+                inicjaly = row[7].value
+                execution_date = row[8].value
+                time_spent = row[9].value
 
                 Order.objects.create(
                     order_id=order_id,
@@ -270,6 +360,8 @@ def upload_excel(request):
                     city=city,
                     postal_code=postal_code,
                     client=client,
+                    wojewodztwo=wojewodztwo,
+                    inicjaly=inicjaly,
                     execution_date=execution_date,
                     time_spent=time_spent
                 )
@@ -291,7 +383,10 @@ def order_list(request):
             if not photo.photo:
                 # Usuwamy rekord zdjęcia, jeśli plik nie istnieje
                 photo.delete()
+        # Dołącz formularz jako atrybut obiektu zamówienia
+        order.form = OrderStatusForm(instance=order)
     return render(request, 'order_list.html', {'orders': orders})
+
 
 from app.forms import OrderForm # Zakładając, że masz formularz OrderForm
 @login_required
@@ -312,18 +407,24 @@ def edit_order(request, pk):
     if request.method == 'POST':
         form = EditOrderForm(request.POST, instance=order)
         photo_form = OrderPhotoForm(request.POST, request.FILES)
-        if form.is_valid() and photo_form.is_valid():
+        form_valid = form.is_valid()
+        photo_form_valid = photo_form.is_valid() and 'photo' in request.FILES  # Sprawdzenie, czy zdjęcie zostało przesłane
+
+        if form_valid and photo_form_valid:
             form.save()
             photo_instance = photo_form.save(commit=False)
             photo_instance.order = order
             photo_instance.save()
-            return redirect('filter_orders_by_name', name=order.name)  # Przekierowanie do filtrowanej listy zamówień po nazwie
+            return redirect('filter_orders_by_name', name=order.name)
+        elif form_valid and not photo_form_valid:
+            form.save()  # Zapisz tylko formularz zamówienia, jeśli formularz zdjęcia jest niepoprawny lub pusty
+            return redirect('filter_orders_by_name', name=order.name)
+
     else:
         form = EditOrderForm(instance=order)
         photo_form = OrderPhotoForm()
 
     return render(request, 'edit_order.html', {'form': form, 'photo_form': photo_form, 'order': order})
-
 @login_required
 def delete_order(request, pk):
     order = get_object_or_404(Order, pk=pk)
@@ -497,7 +598,7 @@ def extract_order_id(subject):
 
 def update_order_with_email(order, email_message):
     
-    order.status = 'Completed'
+    order.status = 'Needs Review'
     order.execution_date = datetime.datetime.now()
     order.save()
     sender_email = parseaddr(email_message['From'])[1]  # Pobranie adresu e-mail nadawcy
@@ -540,6 +641,22 @@ def update_database(request):
 
 #===================================================================
 
+from django.shortcuts import redirect, get_object_or_404
 
+
+
+
+from django.shortcuts import get_object_or_404, redirect
+from .models import Order
+
+def update_order_status(request, order_id):
+    order = get_object_or_404(Order, pk=order_id)
+    if request.method == 'POST':
+        form = OrderStatusForm(request.POST, instance=order)
+        if form.is_valid():
+            form.save()
+            # Przekierowanie z powrotem do filtrowanej listy zleceń, używając nazwy zamówienia
+            return redirect('filter_orders_by_name', name=order.name)
+    # Tutaj można dodać obsługę błędów formularza lub przekierowanie w przypadku nie-POST
 
 

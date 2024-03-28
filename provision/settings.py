@@ -37,7 +37,7 @@ if not DEBUG:
     # and creating unique names for each version so they can safely be cached forever.
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-ALLOWED_HOSTS = ['workflow-9bkv.onrender.com/','127.0.0.1']
+ALLOWED_HOSTS = ['workflow-9bkv.onrender.com','127.0.0.1']
 # settings.py
 
 MEDIA_URL = '/media/'

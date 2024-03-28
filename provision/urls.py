@@ -60,6 +60,9 @@ urlpatterns = [
     path('download-photos/<str:name>/', views.download_photos, name='download_photos'),
     path('update_order_status/<int:order_id>/', views.update_order_status, name='update_order_status'),
     path('download/<str:name>/', views.download_photos_and_excel, name='download_photos_and_excel'),
+    path('order/<int:order_id>/complete/', views.complete_order, name='complete_order'),
+
+    
 ]
 
 if settings.DEBUG:

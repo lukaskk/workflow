@@ -53,6 +53,21 @@ import openpyxl
 import zipfile
 from .models import Order
 
+from django.shortcuts import redirect, get_object_or_404
+from .models import Order
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
+login_required
+def complete_order(request, order_id):
+    order = get_object_or_404(Order, pk=order_id)
+    order.status = 'Completed'  # Zakładając, że status "Completed" jest prawidłową wartością w modelu
+    order.save()
+    next_url = request.POST.get('next', '/')
+    
+    # Przekierowanie do przefiltrowanej tabeli
+    return redirect(next_url)
+
+
 
 
 def filter_orders_by_pod(request, inicjaly):
@@ -76,49 +91,55 @@ def filter_orders_by_pod(request, inicjaly):
 
 
 
-def download_photos_and_excel(request, name):
-    completed_orders = Order.objects.filter(status='Completed')
+import os
+from django.http import StreamingHttpResponse
+from wsgiref.util import FileWrapper
 
+def download_photos_and_excel(request, name):
+    completed_orders = Order.objects.filter(status='Completed').iterator()
+
+    # Tworzenie pliku Excel na dysku zamiast w pamięci
+    excel_file_path = f'/tmp/{name}_orders.xlsx'
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = 'Zrealizowane Zamówienia'
     columns = ["ID Zlecenia", "Nazwa", "Miasto", "Ulica", "Kod Pocztowy", "Data Realizacji", "Status"]
     ws.append(columns)
 
-    photos_zip_buffer = BytesIO()
+    for order in completed_orders:
+        order_execution_date = order.execution_date.strftime('%Y-%m-%d') if order.execution_date else 'Brak daty'
+        ws.append([
+            order.order_id, order.name, order.city, order.street,
+            order.postal_code, order_execution_date, order.get_status_display()
+        ])
 
-    with zipfile.ZipFile(photos_zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+    wb.save(excel_file_path)
+
+    # Tworzenie pliku ZIP na dysku zamiast w pamięci
+    zip_file_path = f'/tmp/{name}_completed_data.zip'
+    with zipfile.ZipFile(zip_file_path, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        zip_file.write(excel_file_path, arcname=f"{name}_orders.xlsx")
+
         for order in completed_orders:
-            order_execution_date = order.execution_date.strftime('%Y-%m-%d') if order.execution_date else 'Brak daty'
-            ws.append([
-                order.order_id, order.name, order.city, order.street,
-                order.postal_code, order_execution_date, order.get_status_display()
-            ])
-
             photo_counter = 0
-            for photo in order.photos.all():
+            for photo in order.photos.all().iterator():
                 photo_counter += 1
                 file_path = photo.photo.path
-                # Utworzenie nazwy folderu na podstawie ID zamówienia i miasta
                 folder_name = f"{order.order_id}_{order.city}"
                 new_filename = f"{folder_name}/{folder_name}_{photo_counter}.jpg"
-                # Dodanie pliku do archiwum ZIP z określeniem nowej ścieżki, łącznie z nazwą folderu
                 zip_file.write(file_path, new_filename)
 
-    excel_buffer = BytesIO()
-    wb.save(excel_buffer)
-    excel_buffer.seek(0)
+    # Usunięcie pliku Excel po dodaniu do ZIP
+    os.remove(excel_file_path)
 
-    response = HttpResponse(content_type='application/zip')
+    # Strumieniowanie pliku ZIP
+    zip_file = open(zip_file_path, 'rb')
+    response = StreamingHttpResponse(FileWrapper(zip_file), content_type='application/zip')
     response['Content-Disposition'] = f'attachment; filename="{name}_completed_data.zip"'
 
-    with zipfile.ZipFile(response, 'w', zipfile.ZIP_DEFLATED) as final_zip:
-        final_zip.writestr(f"{name}_orders.xlsx", excel_buffer.getvalue())
-        photos_zip_buffer.seek(0)
-        # Dodanie zawartości bufora zdjęć jako pojedynczego pliku ZIP w głównym archiwum ZIP
-        final_zip.writestr(f"{name}_photos.zip", photos_zip_buffer.getvalue())
-
     return response
+
+
 
 
 

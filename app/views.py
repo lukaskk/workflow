@@ -2,7 +2,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import  Task
 from .forms import  TaskForm
-from django.contrib.auth import get_user_model
 from django.http import FileResponse
 import imaplib
 import email
@@ -18,7 +17,14 @@ from django.conf import settings
 from .models import CustomUser
 from .forms import CustomUserCreationForm
 from PIL import Image, ImageOps
-
+import os
+from django.http import StreamingHttpResponse, HttpResponse
+from wsgiref.util import FileWrapper
+import openpyxl
+from openpyxl.workbook import Workbook
+import zipfile
+from io import BytesIO
+from .models import Order 
 import io
 from io import BytesIO
 import zipfile
@@ -52,12 +58,23 @@ from io import BytesIO
 import openpyxl
 import zipfile
 from .models import Order
-
+from django.http import HttpResponse
+from io import BytesIO
+import zipfile
+from app.models import Order  
 from django.shortcuts import redirect, get_object_or_404
 from .models import Order
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 login_required
+
+
+def order_photos(request, order_id):
+    order = get_object_or_404(Order, pk=order_id)
+    return render(request, 'order_photos.html', {'order': order})
+
+
+
 def complete_order(request, order_id):
     order = get_object_or_404(Order, pk=order_id)
     order.status = 'Completed'  # Zakładając, że status "Completed" jest prawidłową wartością w modelu
@@ -89,108 +106,121 @@ def filter_orders_by_pod(request, inicjaly):
     return render(request, 'pod.html', context)
 
 
+ # Upewnij się, że importujesz model Order
 
-
-import os
-from django.http import StreamingHttpResponse
-from wsgiref.util import FileWrapper
-
-def download_photos_and_excel(request, name):
-    completed_orders = Order.objects.filter(status='Completed').iterator()
-
-    # Tworzenie pliku Excel na dysku zamiast w pamięci
-    excel_file_path = f'/tmp/{name}_orders.xlsx'
+def stream_excel_data(orders):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = 'Zrealizowane Zamówienia'
     columns = ["ID Zlecenia", "Nazwa", "Miasto", "Ulica", "Kod Pocztowy", "Data Realizacji", "Status"]
     ws.append(columns)
 
-    for order in completed_orders:
+    for order in orders:
         order_execution_date = order.execution_date.strftime('%Y-%m-%d') if order.execution_date else 'Brak daty'
         ws.append([
             order.order_id, order.name, order.city, order.street,
             order.postal_code, order_execution_date, order.get_status_display()
         ])
+    
+    excel_file = BytesIO()
+    wb.save(excel_file)
+    excel_file.seek(0)
+    return excel_file.getvalue()
 
-    wb.save(excel_file_path)
+def stream_zip_data(orders, name):
+    in_memory_zip = BytesIO()
+    with zipfile.ZipFile(in_memory_zip, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        excel_data = stream_excel_data(orders)
+        zip_file.writestr(f"{name}_orders.xlsx", excel_data)
 
-    # Tworzenie pliku ZIP na dysku zamiast w pamięci
-    zip_file_path = f'/tmp/{name}_completed_data.zip'
-    with zipfile.ZipFile(zip_file_path, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        zip_file.write(excel_file_path, arcname=f"{name}_orders.xlsx")
-
-        for order in completed_orders:
+        for order in orders:
             photo_counter = 0
-            for photo in order.photos.all().iterator():
+            for photo in order.photos.all():
                 photo_counter += 1
                 file_path = photo.photo.path
-                folder_name = f"{order.order_id}_{order.city}"
-                new_filename = f"{folder_name}/{folder_name}_{photo_counter}.jpg"
+                # Zmiana sposobu tworzenia nazwy folderu i pliku
+                folder_name = f"{order.city}_{order.street}".replace(" ", "_")  # Usunięcie spacji
+                new_filename = f"{folder_name}/{order.city}_{order.street}_{photo_counter}.jpg".replace(" ", "_")  # Usunięcie spacji
                 zip_file.write(file_path, new_filename)
+    in_memory_zip.seek(0)
+    return in_memory_zip
 
-    # Usunięcie pliku Excel po dodaniu do ZIP
-    os.remove(excel_file_path)
+def download_photos_and_excel(request, name):
+    completed_orders = Order.objects.iterator()
 
-    # Strumieniowanie pliku ZIP
-    zip_file = open(zip_file_path, 'rb')
-    response = StreamingHttpResponse(FileWrapper(zip_file), content_type='application/zip')
+    zip_stream = stream_zip_data(completed_orders, name)
+    response = StreamingHttpResponse(FileWrapper(zip_stream), content_type='application/zip')
     response['Content-Disposition'] = f'attachment; filename="{name}_completed_data.zip"'
-
     return response
 
 
 
 
+# Upewnij się, że importujesz model OrderPhoto tylko jeśli jest używany gdzie indziej w kodzie
 
-def download_photos(request, name):
-    orders = Order.objects.filter(name=name)
-    photos = OrderPhoto.objects.filter(order__in=orders)
+import os
+from django.http import HttpResponse
+from django.conf import settings
+import zipfile
+from .models import Order
 
-    response = HttpResponse(content_type='application/zip')
-    response['Content-Disposition'] = f'attachment; filename="photos_{name}.zip"'
+def download_photos_zip(request, name):
+    orders = Order.objects.filter(status='Completed')
+    
+    photos_per_zip = 100
+    current_photo_count = 0
+    zip_file_count = 1
+    zip_file_paths = []
 
-    with zipfile.ZipFile(response, 'w') as zip_file:
-        for photo in photos:
-            file_path = photo.photo.path
-            zip_file.write(file_path, photo.photo.name)
+    # Tworzenie katalogu tymczasowego dla plików ZIP, jeśli nie istnieje
+    zip_dir = os.path.join(settings.MEDIA_ROOT, 'temp_zip')
+    if not os.path.exists(zip_dir):
+        os.makedirs(zip_dir)
 
-    return response
+    zip_file_path = os.path.join(zip_dir, f"{name}_photos_part{zip_file_count}.zip")
+    zip_file = zipfile.ZipFile(zip_file_path, 'w', zipfile.ZIP_DEFLATED)
 
-def download_orders_excel(request, name):
-    orders = Order.objects.filter(name=name)
-
-    # Tworzenie nowego arkusza kalkulacyjnego
-    wb = openpyxl.Workbook()
-    ws = wb.active
-
-    # Dodawanie nagłówków
-    columns = ["ID Zlecenia", "Nazwa", "Miasto", "Ulica", "Kod Pocztowy", "Klient", "Data Realizacji", "Czas Poświęcony", "Przypisany Użytkownik", "Status", "Zdjęcia"]
-    ws.append(columns)
-
-    # Dodawanie danych zleceń
     for order in orders:
-        # Pobieranie nazw plików zdjęć dla każdego zlecenia
-        photo_filenames = [photo.photo.name for photo in order.photos.all()]
-        photo_list = ', '.join(photo_filenames)  # Tworzenie listy nazw plików jako string
+        for photo in order.photos.all():
+            if current_photo_count >= photos_per_zip:
+                # Zamykanie bieżącego pliku ZIP
+                zip_file.close()
+                zip_file_paths.append(zip_file_path)
+                
+                # Resetowanie licznika i tworzenie nowego pliku ZIP
+                zip_file_count += 1
+                current_photo_count = 0
+                zip_file_path = os.path.join(zip_dir, f"{name}_photos_part{zip_file_count}.zip")
+                zip_file = zipfile.ZipFile(zip_file_path, 'w', zipfile.ZIP_DEFLATED)
+            
+            city_street_folder = f"{order.city}_{order.street}".replace(" ", "_")
+            photo_filename = photo.photo.name.split('/')[-1]
+            modified_photo_filename = f"{city_street_folder}_{photo_filename}"
+            zip_path = f"{city_street_folder}/{modified_photo_filename}"
+            
+            photo_file_path = photo.photo.path
+            with open(photo_file_path, 'rb') as file_content:
+                zip_file.writestr(zip_path, file_content.read())
+            
+            current_photo_count += 1
 
-        ws.append([
-            order.order_id, order.name, order.city, order.street,
-            order.postal_code, order.client, order.execution_date,
-            order.time_spent, order.assigned_user.username if order.assigned_user else '',
-            order.get_status_display(), photo_list
-        ])
+    # Dodawanie ostatniego pliku ZIP do listy, jeśli zawiera jakiekolwiek zdjęcia
+    if current_photo_count > 0:
+        zip_file.close()
+        zip_file_paths.append(zip_file_path)
 
-    # Zapisywanie arkusza do strumienia bajtów
-    response = HttpResponse(content_type='application/vnd.ms-excel')
-    response['Content-Disposition'] = f'attachment; filename="orders_{name}.xlsx"'
+    # Generowanie odpowiedzi z linkami do pobrania plików ZIP
+    response_content = "Links to download ZIP files:<br>"
+    for path in zip_file_paths:
+        file_name = os.path.basename(path)
+        download_url = settings.MEDIA_URL + 'temp_zip/' + file_name
+        response_content += f'<a href="{download_url}">{file_name}</a><br>'
 
-    with BytesIO() as file:
-        wb.save(file)
-        file.seek(0)
-        response.write(file.read())
+    return HttpResponse(response_content)
 
-    return response
+
+
+
 
 from django.views.generic import ListView, CreateView, UpdateView
 
@@ -679,5 +709,6 @@ def update_order_status(request, order_id):
             # Przekierowanie z powrotem do filtrowanej listy zleceń, używając nazwy zamówienia
             return redirect('filter_orders_by_name', name=order.name)
     # Tutaj można dodać obsługę błędów formularza lub przekierowanie w przypadku nie-POST
+
 
 

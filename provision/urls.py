@@ -56,11 +56,12 @@ urlpatterns = [
     path('users/edit/<int:user_id>/', views.edit_user, name='edit_user'),
     path('users/delete/<int:user_id>/', views.delete_user, name='delete_user'),
     path('users/', views.user_list, name='user_list'),
-    path('download-orders-excel/<str:name>/', views.download_orders_excel, name='download_orders_excel'),
-    path('download-photos/<str:name>/', views.download_photos, name='download_photos'),
+    path('download-orders-excel/<str:name>/', views.download_photos_and_excel, name='download_photos_and_excel'),
+    path('download_photos_zip/<str:name>/', views.download_photos_zip, name='download_photos_zip'),
     path('update_order_status/<int:order_id>/', views.update_order_status, name='update_order_status'),
     path('download/<str:name>/', views.download_photos_and_excel, name='download_photos_and_excel'),
     path('order/<int:order_id>/complete/', views.complete_order, name='complete_order'),
+    path('order_photos/<int:order_id>/', views.order_photos, name='order_photos'),
 
     
 ]

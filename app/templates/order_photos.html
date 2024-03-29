@@ -1,0 +1,7 @@
+<!-- Przykład szablonu order_photos.html -->
+{% for photo in order.photos.all %}
+<div class="carousel-item {% if forloop.first %}active{% endif %}">
+    <img src="{{ photo.photo.url }}" class="d-block w-100" alt="Zdjęcie">
+</div>
+{% endfor %}
+

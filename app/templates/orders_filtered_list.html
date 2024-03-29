@@ -6,8 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ order.name }} - Lista Zleceń</title>
-
+    <title>{{ order.name|escape }} - Lista Zleceń</title>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <!-- DataTables CSS -->
@@ -16,15 +15,10 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.5/css/responsive.dataTables.min.css">
     <!-- SB Admin 2 CSS -->
     <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
+    <!-- LazySizes (dla leniwego ładowania obrazów) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.2.2/lazysizes.min.js" async=""></script>
 </head>
 <body id="page-top">
-
-   
-
-    
-
-
-
 
 <div id="wrapper">
     <!-- Treść strony -->
@@ -35,19 +29,16 @@
                 <h1 class="h3 mb-2 text-gray-800">Lista Zleceń</h1>
                 <a href="{% url 'create_order' %}" class="btn btn-primary mb-3">Dodaj Zlecenie</a>
                 <!-- Przykład formularza HTML do pobierania -->
-<form action="{% url 'download_photos_and_excel' name='download_orders_excel' %}" method="get">
-    <button type="submit" class="btn btn-primary">Pobierz dane</button>
-</form>
-
-                <!-- Pasek postępu -->
-    <div class="progress">
-        <div class="progress-bar" role="progressbar" style="width: {{ progress_percentage }}%" aria-valuenow="{{ progress_percentage }}" aria-valuemin="0" aria-valuemax="100">{{ progress_percentage|floatformat:2 }}%</div>
-    </div>
+<form action="{% url 'download_photos_and_excel' name='download_photos_and_excel' %}" method="get">
+    <button type="submit" class="btn btn-primary">Pobierz plik Excel</button>
+    </form><br>
+    <form action="{% url 'download_photos_zip' name='download_photos_zip' %}" method="get">
+    <button type="submit" class="btn btn-primary">Pobierz Zdjęcia </button>
+    </form>
                 <!-- Tabela zleceń -->
                 <div class="card shadow mb-5">
                     <div class="card-body">
                         <table id="orderTable" class="table table-bordered" width="100%" cellspacing="0">
-                            <!-- Nagłówki tabeli -->
                             <thead>
                                 <tr>
                                     <th>ID Zlecenia</th>
@@ -64,43 +55,21 @@
                             <tbody>
                                 {% for order in orders %}
                                 <tr>
-                                    <!-- Dane zlecenia -->
-                                    <td>{{ order.order_id }}   
-                                    </a></td>
-                                    <td><!-- Przyciski akcji -->
-                                       
-                                        <a href="{% url 'generate_pdf' order.order_id %}" class="btn btn-info">PDF</a><br>
-                                        <!-- Link do otwarcia modalu z karuzelą zdjęć -->
+                                    <td>{{ order.order_id }}</td>
+                                    <td>
+                                        <!-- Przyciski akcji -->
+                                        <a href="{% url 'generate_pdf' order.order_id %}" class="btn btn-info">PDF</a>
                                         {% if order.photos.all %}
-                                        <a href="#" data-toggle="modal" data-target="#galleryModal{{ order.id }}">Pokaż zdjęcia</a><br>
-                                         {% endif %}
-                                         {% if order.status == 'Needs Review' %}
-                                         <form action="{% url 'complete_order' order.id %}" method="post">
-                                             {% csrf_token %}
-                                             <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                                             <button type="submit" class="btn btn-success">Zaakceptuj</button>
-                                         </form>
-                                     {% endif %}
-                                     
-    </td>
-                                    <td>{{ order.city }}<br><a href="{% url 'edit_order' order.id %}" class="btn btn-info " style="box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);">
-                                        <i class="fas fa-edit"></i> Edytuj
-                                    </a>  
-                                    <a href="{% url 'delete_order' order.id %}" class="btn btn-danger " onclick="return confirm('Czy na pewno chcesz usunąć to zlecenie?');">
-                                        <i class="fas fa-trash">Usuń</i></td>
+                                        <a href="#" data-toggle="modal" data-target="#galleryModal{{ order.id }}">Pokaż zdjęcia</a>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ order.city }}</td>
                                     <td>{{ order.street }}</td>
                                     <td>{{ order.postal_code }}</td>                                    
                                     <td>{{ order.execution_date }}</td>
-                                    <td>
-                                        <a href="{% url 'filter_orders_by_pod' order.inicjaly %}">{{ order.inicjaly }}</a>
-                                    </td>
-                                    
-                                    <td>{{ order.get_status_display }}
-                                    </td>
-                                    <td>
-                                        
-                                        {{ order.name }}
-                                    </td>
+                                    <td>{{ order.assigned_user }}</td>
+                                    <td>{{ order.get_status_display }}</td>
+                                    <td>{{ order.name }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -110,15 +79,15 @@
             </div>
         </div>
     </div>
-
 </div>
+
 <!-- Modale dla zdjęć zleceń -->
 {% for order in orders %}
 <div class="modal fade" id="galleryModal{{ order.id }}" tabindex="-1" role="dialog" aria-labelledby="galleryModalLabel{{ order.id }}" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="galleryModalLabel{{ order.id }}">Galeria Zdjęć Zlecenia {{ order.city}} {{ order.street}}</h5>
+                <h5 class="modal-title" id="galleryModalLabel{{ order.id }}">Galeria Zdjęć Zlecenia {{ order.city|escape }} {{ order.street|escape }}</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -133,7 +102,7 @@
                     <div class="carousel-inner">
                         {% for photo in order.photos.all %}
                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <img src="{{ photo.photo.url }}" class="d-block w-100" alt="Zdjęcie">
+                            <img data-src="{{ photo.photo.url }}" class="d-block w-100 lazyload" alt="Zdjęcie zlecenia">
                         </div>
                         {% endfor %}
                     </div>
@@ -157,34 +126,20 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 <!-- DataTables JavaScript -->
 <script src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.min.js"></script>
-<!-- DataTables Responsive JavaScript -->
 <script src="https://cdn.datatables.net/responsive/2.2.5/js/dataTables.responsive.min.js"></script>
 
 <script>
-    $(document).ready(function() {
-        $('#orderTable').DataTable({
-            responsive: true,
-            "columnDefs": [
-                {
-                    "targets": 7, // Indeks kolumny statusu, dostosuj do swojej tabeli
-                    "orderData": [7], // Sortuj według kolumny statusu
-                    "type": "string",
-                    "render": function (data, type, row) {
-                        if (type === 'sort') {
-                            // Mapowanie statusów na wartości numeryczne dla celów sortowania
-                            var statusOrder = {
-                                'Niezakceptowany': 1, // Najwyższy priorytet
-                                'Zrealizowane': 2,
-                                'Oczekujące': 3  // Najniższy priorytet
-                            };
-                            return statusOrder[data] || 4; // Domyślnie, jeśli status nie jest znany
-                        }
-                        return data;
-                    }
-                }
-            ],
-            "order": [[7, 'asc']] // Domyślne sortowanie według kolumny statusu
-        });
+$(document).ready(function() {
+    $('#orderTable').DataTable({
+        responsive: true,
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.10.21/i18n/Polish.json"
+        }
     });
-    </script>
-    
+});
+
+// Inicjalizacja funkcji fetchData() i innych skryptów, jeśli są potrzebne
+// fetchData();
+</script>
+</body>
+</html>

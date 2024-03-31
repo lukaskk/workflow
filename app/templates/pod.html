@@ -62,11 +62,11 @@
                                 {% for order in orders %}
                                 <tr>
                                     <!-- Dane zlecenia -->
-                                    <td>{{ order.order_id }}   
+                                    <td>{{ order.order_id }}   <a href="{% url 'generate_pdf' order.order_id %}" class="btn btn-info">PDF</a>  
                                     </a></td>
                                     <td><!-- Przyciski akcji -->
                                        
-                                        <a href="{% url 'generate_pdf' order.order_id %}" class="btn btn-info">PDF</a><br>
+                                      
                                         <!-- Link do otwarcia modalu z karuzelą zdjęć -->
                                         {% if order.photos.all %}
                                         <a href="#" data-toggle="modal" data-target="#galleryModal{{ order.id }}">Pokaż zdjęcia</a><br>

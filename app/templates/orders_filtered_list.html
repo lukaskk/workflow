@@ -17,24 +17,30 @@
     <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
     <!-- LazySizes (dla leniwego ładowania obrazów) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.2.2/lazysizes.min.js" async=""></script>
+    <style>
+        .loader {
+          border: 16px solid #f3f3f3; /* Light grey */
+          border-top: 16px solid #3498db; /* Blue */
+          border-radius: 50%;
+          width: 120px;
+          height: 120px;
+          animation: spin 2s linear infinite;
+          margin: 20px auto;
+        }
+        
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        </style>
+        
 </head>
 <body id="page-top">
 
-<div id="wrapper">
-    <!-- Treść strony -->
-    <div id="content-wrapper" class="d-flex flex-column">
-        <div id="content">
-            <div class="container-fluid pt-4">
-                <!-- Nagłówek i przyciski -->
-                <h1 class="h3 mb-2 text-gray-800">Lista Zleceń</h1>
-                <a href="{% url 'create_order' %}" class="btn btn-primary mb-3">Dodaj Zlecenie</a>
-                <!-- Przykład formularza HTML do pobierania -->
-<form action="{% url 'download_photos_and_excel' name='download_photos_and_excel' %}" method="get">
-    <button type="submit" class="btn btn-primary">Pobierz plik Excel</button>
-    </form><br>
-    <form action="{% url 'download_photos_zip' name='download_photos_zip' %}" method="get">
-    <button type="submit" class="btn btn-primary">Pobierz Zdjęcia </button>
-    </form>
+
+
+
+
                 <!-- Tabela zleceń -->
                 <div class="card shadow mb-5">
                     <div class="card-body">
@@ -55,31 +61,75 @@
                             <tbody>
                                 {% for order in orders %}
                                 <tr>
-                                    <td>{{ order.order_id }}</td>
-                                    <td>
-                                        <!-- Przyciski akcji -->
-                                        <a href="{% url 'generate_pdf' order.order_id %}" class="btn btn-info">PDF</a>
+                                    <!-- Dane zlecenia -->
+                                    <td>{{ order.order_id }}   
+                                    </a></td>
+                                    <td><!-- Przyciski akcji -->
+                                       
+                                        <a href="{% url 'generate_pdf' order.order_id %}" class="btn btn-info">PDF</a><br>
+                                        <!-- Link do otwarcia modalu z karuzelą zdjęć -->
                                         {% if order.photos.all %}
-                                        <a href="#" data-toggle="modal" data-target="#galleryModal{{ order.id }}">Pokaż zdjęcia</a>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ order.city }}</td>
+                                        <a href="#" data-toggle="modal" data-target="#galleryModal{{ order.id }}">Pokaż zdjęcia</a><br>
+                                         {% endif %}
+                                         {% if order.status == 'Needs Review' %}
+                                         <form action="{% url 'complete_order' order.id %}" method="post">
+                                             {% csrf_token %}
+                                             <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                             <button type="submit" class="btn btn-success">Zaakceptuj</button>
+                                         </form>
+                                     {% endif %}
+                                     
+    </td>
+                                    <td>{{ order.city }}<br><a href="{% url 'edit_order' order.id %}" class="btn btn-info " style="box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);">
+                                        <i class="fas fa-edit"></i> Edytuj
+                                    </a>  
+                                    <a href="{% url 'delete_order' order.id %}" class="btn btn-danger " onclick="return confirm('Czy na pewno chcesz usunąć to zlecenie?');">
+                                        <i class="fas fa-trash">Usuń</i></td>
                                     <td>{{ order.street }}</td>
                                     <td>{{ order.postal_code }}</td>                                    
                                     <td>{{ order.execution_date }}</td>
-                                    <td>{{ order.assigned_user }}</td>
-                                    <td>{{ order.get_status_display }}</td>
-                                    <td>{{ order.name }}</td>
+                                    <td>
+                                        <a href="{% url 'filter_orders_by_pod' order.inicjaly %}">{{ order.inicjaly }}</a>
+                                    </td>
+                                    
+                                    <td>{{ order.get_status_display }}
+                                    </td>
+                                    <td>
+                                        
+                                        {{ order.name }}
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
                 </div>
+            </div><a href="{% url 'create_order' %}" class="btn btn-primary mb-3">Dodaj Zlecenie</a>
+             <!-- Spinner i tekst -->
+<div id="spinner" style="display:none; text-align:center;">
+    <div class="loader"></div>
+    <div class="spinner-text">Trwa generowanie plików ZIP... może to potrwać kilka minut.</div>
+</div> <form action="{% url 'download_photos_and_excel' name='download_photos_and_excel' %}" method="get">
+    <button type="submit" class="btn btn-primary">Pobierz plik Excel</button>
+    </form>
+        <div id="wrapper">
+          <!-- Treść strony -->
+          <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                <div class="container-fluid pt-4">
+                
+                   
+                    <form action="{% url 'download_photos_zip' name='download_photos_zip' %}" method="get">
+                    <button type="submit" class="btn btn-primary">Pobierz Zdjęcia </button>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
+        
+        
 </div>
+        </div>
+       
 
 <!-- Modale dla zdjęć zleceń -->
 {% for order in orders %}
@@ -136,10 +186,15 @@ $(document).ready(function() {
             "url": "//cdn.datatables.net/plug-ins/1.10.21/i18n/Polish.json"
         }
     });
-});
 
+    // Pokaż spinner przy wysyłaniu formularza
+    $("form").submit(function() {
+        $("#spinner").show();
+    });
+});
 // Inicjalizacja funkcji fetchData() i innych skryptów, jeśli są potrzebne
 // fetchData();
 </script>
+
 </body>
 </html>

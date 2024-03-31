@@ -210,7 +210,7 @@ def download_photos_zip(request, name):
         zip_file_paths.append(zip_file_path)
 
     # Generowanie odpowiedzi z linkami do pobrania plików ZIP
-    response_content = "Links to download ZIP files:<br>"
+    response_content = "Pliki ZIP do pobrania:<br>"
     for path in zip_file_paths:
         file_name = os.path.basename(path)
         download_url = settings.MEDIA_URL + 'temp_zip/' + file_name
@@ -669,7 +669,7 @@ def update_order_with_email(order, email_message):
     #send_feedback_email(order.order_id, f"Zlecenie {order.order_id} zostało zaktualizowane. Miasto: {order.city}, Ulica: {order.street}, Zapisane zdjęcia: {', '.join(photos_saved)}", EMAIL_ACCOUNT, EMAIL_PASSWORD, sender_email)
     return f"Order with ID {order.order_id} has been updated successfully."
 
-def resize_image(file_data, max_width=2016, max_height=3040):
+def resize_image(file_data, max_width=2272, max_height=1704):
     with Image.open(io.BytesIO(file_data)) as img:
         # Usuwanie kanału alfa dla obrazów RGBA i konwersja do RGB
         if img.mode in ("RGBA", "LA"):

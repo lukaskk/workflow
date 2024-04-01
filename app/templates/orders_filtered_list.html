@@ -50,12 +50,11 @@
                                     <th>ID Zlecenia</th>
                                     <th>Opcje</th>
                                     <th>Miasto</th>
-                                    <th>Ulica</th>
-                                    <th>Kod Pocztowy</th>                                
+                                    <th>Ulica </th>                                                               
                                     <th>Data Realizacji</th>
                                     <th>Przypisany Użytkownik</th>
                                     <th>Status</th>
-                                    <th>Nazwa</th>
+                                    
                                 </tr>
                             </thead>
                             <tbody>
@@ -85,8 +84,7 @@
                                     </a>  
                                     <a href="{% url 'delete_order' order.id %}" class="btn btn-danger " onclick="return confirm('Czy na pewno chcesz usunąć to zlecenie?');">
                                         <i class="fas fa-trash">Usuń</i></td>
-                                    <td>{{ order.street }}</td>
-                                    <td>{{ order.postal_code }}</td>                                    
+                                    <td>{{ order.street }}</td>                                                                  
                                     <td>{{ order.execution_date }}</td>
                                     <td>
                                         <a href="{% url 'filter_orders_by_pod' order.inicjaly %}">{{ order.inicjaly }}</a>
@@ -94,10 +92,7 @@
                                     
                                     <td>{{ order.get_status_display }}
                                     </td>
-                                    <td>
-                                        
-                                        {{ order.name }}
-                                    </td>
+                                    
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -187,8 +182,8 @@
             }, // Dodano brakujący przecinek tutaj
             "columnDefs": [
                 {
-                    "targets": 7, // Indeks kolumny statusu, dostosuj do swojej tabeli
-                    "orderData": [7], // Sortuj według kolumny statusu
+                    "targets": 6, // Indeks kolumny statusu, dostosuj do swojej tabeli
+                    "orderData": [6], // Sortuj według kolumny statusu
                     "type": "string",
                     "render": function (data, type, row) {
                         if (type === 'sort') {
@@ -204,7 +199,7 @@
                     }
                 }
             ],
-            "order": [[7, 'asc']] // Domyślne sortowanie według kolumny statusu
+            "order": [[6, 'asc']] // Domyślne sortowanie według kolumny statusu
         });
         $("form").submit(function() {
             $("#spinner").show();

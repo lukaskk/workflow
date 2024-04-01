@@ -38,8 +38,8 @@
             <tbody>
                 {% for task in tasks %}
                 <tr>
-                    <td><a href="{% url 'filter_orders_by_name' task.name %}">{{ task.name }}</a></td>
-                    <td>{{ task.description }}</td>
+                    <td>{{ task.name }}</a></td>
+                    <td><a href="{% url 'filter_orders_by_name' task.name %}">Lista placówek.</a><br/>{{ task.description }}</td>
                     <td>{{ task.get_status_display }}</td>
                     <td>{{ task.client_name }}</td>
                     <td>{{ task.time_spent }}</td>
